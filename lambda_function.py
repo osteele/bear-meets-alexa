@@ -88,6 +88,10 @@ def lambda_handler(req, context):
     elif intent.name == 'WhatsHappeningNext':
         return handle_whats_happening_next_request(intent)
 
+    # Check if the user wants to know what featured events are happening next
+    elif intent.name == 'WhatsHappeningNextFeatured':
+        return handle_whats_happening_next_request(intent, 'featured')
+
     elif intent.name == 'WhatsHappeningOn':  # Look up what's happening on/at a specific day/time
         return handle_whats_happening_on_request(intent)
 
@@ -95,14 +99,14 @@ def lambda_handler(req, context):
     return prepare_response("I didn't recognize the intent " + intent.name)
 
 
-def handle_whats_happening_next_request(intent):
+def handle_whats_happening_next_request(intent, labels=None):
     # Resolve the dates to look between
     today = datetime.now()
     week_from_today = today + timedelta(weeks=1)
     # today = today.strftime('%Y-%m-%d')
     # week_from_today = week_from_today.strftime('%Y-%m-%d')
     # Get the event data
-    events = get_events(start=today, end=week_from_today)
+    events = get_events(start=today, end=week_from_today, labels=labels)
     if events is None:  # Make sure there wasn't an error talking to ABE
         return prepare_abe_connectivity_problem_response()
 
