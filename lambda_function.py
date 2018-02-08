@@ -1,10 +1,14 @@
 from datetime import datetime, timedelta
 from urllib import request
+from dateutil import tz
 import json
 import time
 
 
 class ABEEvent:
+
+    from_zone = tz.gettz('UTC')
+    to_zone = tz.gettz('America/New_York')
 
     def __init__(self, dict_data):
         self.title = dict_data['title']
@@ -36,8 +40,9 @@ class ABEEvent:
     @staticmethod
     def _parse_date_time(string):
         dt = datetime.strptime(string, '%Y-%m-%d %H:%M:%S')
-        # Handle the timezone difference TODO Do this correctly (and on the backend)
-        return dt - timedelta(hours=-5)
+        # Convert from UTC to Eastern
+        dt.replace(tzinfo=ABEEvent.from_zone)
+        return dt.astimezone(ABEEvent.to_zone)
 
 
 class AVSIntent:
@@ -112,7 +117,7 @@ def handle_whats_happening_next_request(intent, labels=None):
 
     text_res = 'I found {} events coming up on the Olin calendar in the next week.'.format(len(events))
     for event in events:
-        text_res += "{}, there's {} {}".format(event.get_start_speech(), event.title, 'in ' + event.location if event.location else '')
+        text_res += " {}, there's {} {}.".format(event.get_start_speech(), event.title, 'in ' + event.location if event.location else '')
 
     return prepare_response(text_res)
 
@@ -127,9 +132,9 @@ def handle_whats_happening_on_request(intent):
 
     date_as_words = date.strftime('%A, %B %d')
     count = len(events)
-    text_res = 'I found {} event{} on {}. '.format('no' if count == 0 else count, '' if count == 1 else 's', date_as_words)
+    text_res = 'I found {} event{} on {}.'.format('no' if count == 0 else count, '' if count == 1 else 's', date_as_words)
     for event in events:
-        text_res += "{}, there's {} {}. ".format(event.get_start_speech(), event.title, 'in ' + event.location if event.location else '')
+        text_res += " {}, there's {} {}.".format(event.get_start_speech(), event.title, 'in ' + event.location if event.location else '')
 
     return prepare_response(text_res)
 
