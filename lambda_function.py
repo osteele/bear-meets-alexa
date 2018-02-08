@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from urllib import request
 import json
+import time
 
 
 class ABEEvent:
@@ -34,7 +35,9 @@ class ABEEvent:
 
     @staticmethod
     def _parse_date_time(string):
-        return datetime.strptime(string, '%Y-%m-%d %H:%M:%S')
+        dt = datetime.strptime(string, '%Y-%m-%d %H:%M:%S')
+        # Handle the timezone difference TODO Do this correctly (and on the backend)
+        return dt - timedelta(hours=-5)
 
 
 class AVSIntent:
@@ -49,8 +52,9 @@ class AVSIntent:
             intent = server_response['request']['intent']
             self.name = intent['name']
             self.slots = {}
-            for name, slot in intent['slots'].items():
-                self.slots[name] = IntentSlot(slot)
+            if 'slots' in intent:
+                for name, slot in intent['slots'].items():
+                    self.slots[name] = IntentSlot(slot)
         else:  # No intent data if Skill was simply opened
             # Define member variables
             self.name = None
@@ -95,11 +99,11 @@ def handle_whats_happening_next_request(intent):
     # Resolve the dates to look between
     today = datetime.now()
     week_from_today = today + timedelta(weeks=1)
-    today = today.strftime('%Y-%m-%d')
-    week_from_today = week_from_today.strftime('%Y-%m-%d')
+    # today = today.strftime('%Y-%m-%d')
+    # week_from_today = week_from_today.strftime('%Y-%m-%d')
     # Get the event data
     events = get_events(start=today, end=week_from_today)
-    if not events:  # Make sure there wasn't an error talking to ABE
+    if events is None:  # Make sure there wasn't an error talking to ABE
         return prepare_abe_connectivity_problem_response()
 
     text_res = 'I found {} events coming up on the Olin calendar in the next week.'.format(len(events))
@@ -138,6 +142,7 @@ def get_events(start=None, end=None, labels=None):
     :param {list} labels: (optional) a list of tags to filter results based on
     :return {list}: the events found
     """
+    print('Getting events between {} and {}'.format(start, end))
     # Make an HTTP request to ABE
     request_url = 'https://abe-dev.herokuapp.com/events/'
     if start and end:  # If we're searching within a specific range, add that to the GET parameters
@@ -146,8 +151,14 @@ def get_events(start=None, end=None, labels=None):
     try:
         with request.urlopen(request.Request(request_url)) as res:
             # Parse the server response TODO Error checking
-            result = json.loads(res.read().decode())
+            res = res.read().decode()
+            if res.startswith('[]'):  # Why is this necessary????
+                print('Found 0 events')
+                return []  # No events found
+            print('Found some events:', res)
+            result = json.loads(res)
     except Exception as e:
+        print('Error parsing response from ABE')
         print(e)
         return None  # Some error talking to ABE
 
