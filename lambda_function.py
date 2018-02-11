@@ -1,77 +1,9 @@
 from datetime import datetime, timedelta
 from urllib import request
-from dateutil import tz
 import json
 import time
-
-
-class ABEEvent:
-
-    from_zone = tz.gettz('UTC')
-    to_zone = tz.gettz('America/New_York')
-
-    def __init__(self, dict_data):
-        self.title = dict_data['title']
-        self.start = self._parse_date_time(dict_data.get('start'))
-        self.end = self._parse_date_time(dict_data.get('end'))
-        self.location = dict_data.get('location')
-        self.all_day = dict_data.get('allDay')
-        self.labels = dict_data.get('labels')
-
-    def get_start_speech(self):
-        return str(self.start.strftime('All day %A' if self.all_day else 'On %A at %I:%M %p'))
-
-    def has_labels(self, labels, exact_match=False):
-        """
-        Checks to see if the event contains one or all of the specified labels.
-        :param {list} labels: the labels to check the event for
-        :param {boolean} exact_match: if True, the event must contain all of the specified labels, otherwise a single match is adequate
-        :return {boolean}: True if the event has the given labels, False otherwise
-        """
-        for target_label in labels:  # For each of the filter labels
-            if target_label in self.labels:  # See if the event has it
-                if not exact_match:  # If we're just looking for a partial match
-                    return True  # We have successfully done a partial match
-            elif exact_match:  # If the label is not on the event, check if we need an exact match
-                return False  # Exact match failed
-
-        return True  # Exact match successful
-
-    @staticmethod
-    def _parse_date_time(string):
-        dt = datetime.strptime(string, '%Y-%m-%d %H:%M:%S')
-        # Convert from UTC to Eastern
-        dt.replace(tzinfo=ABEEvent.from_zone)
-        return dt.astimezone(ABEEvent.to_zone)
-
-
-class AVSIntent:
-
-    def __init__(self, server_response):  # TODO Error handling
-        event_type = server_response['request']['type']
-
-        # Check if the user said "Alexa, open Bear" (or the like)
-        self.is_launch_request = event_type == 'LaunchRequest'
-
-        if not self.is_launch_request:  # The user said something more than "open Bear"
-            intent = server_response['request']['intent']
-            self.name = intent['name']
-            self.slots = {}
-            if 'slots' in intent:
-                for name, slot in intent['slots'].items():
-                    self.slots[name] = IntentSlot(slot)
-        else:  # No intent data if Skill was simply opened
-            # Define member variables
-            self.name = None
-            self.slots = None
-
-
-class IntentSlot:
-
-    def __init__(self, server_data):
-        self.name = server_data.get('name')
-        self.value = server_data.get('value')
-        self.confirmation_status = server_data.get('confirmationStatus')
+from libeary.abe_event import ABEEvent
+from libeary.avs_intent import AVSIntent
 
 
 def lambda_handler(req, context):
@@ -110,7 +42,7 @@ def handle_whats_happening_next_request(intent, labels=None):
     week_from_today = today + timedelta(weeks=1)
     # today = today.strftime('%Y-%m-%d')
     # week_from_today = week_from_today.strftime('%Y-%m-%d')
-    # Get the event data
+    # Get the event libeary
     events = get_events(start=today, end=week_from_today, labels=labels)
     if events is None:  # Make sure there wasn't an error talking to ABE
         return prepare_abe_connectivity_problem_response()
@@ -174,7 +106,7 @@ def get_events(start=None, end=None, labels=None):
     # Convert the result into the format we want
     events = []
     for event in result:
-        # Convert JSON data into an event object
+        # Convert JSON libeary into an event object
         event = ABEEvent(event)
         # Filter, if necessary TODO ABE does this
         if labels:
