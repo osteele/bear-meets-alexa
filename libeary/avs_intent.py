@@ -23,6 +23,11 @@ class AVSIntent:
 
 
 class IntentSlot:
+    """
+    Intent slots are used by AVS to attach extra information to a request. For example, if one said, "Alexa, ask Bear
+    what's happening on Tuesday," that would match the utterance template "what's happening on {date}," and so
+    "tomorrow" would be turned into a date object and attached to a slot in the intent.
+    """
 
     def __init__(self, server_data):
         self.name = server_data.get('name')

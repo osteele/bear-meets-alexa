@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from urllib import request
 import json
-import time
 from libeary.abe_event import ABEEvent
 from libeary.avs_intent import AVSIntent
 
@@ -37,16 +36,22 @@ def lambda_handler(req, context):
 
 
 def handle_whats_happening_next_request(intent, labels=None):
+    """
+    This function queries ABE for events happening in the next week. It handles the "WhatsHappeningNext" request from AVS.
+    :param {AVSIntent} intent: the intent from AVS
+    :param {list} labels: a list of labels to filter events by
+    :return {list}: the events found in the next week
+    """
     # Resolve the dates to look between
     today = datetime.now()
     week_from_today = today + timedelta(weeks=1)
-    # today = today.strftime('%Y-%m-%d')
-    # week_from_today = week_from_today.strftime('%Y-%m-%d')
-    # Get the event libeary
+
+    # Get the events
     events = get_events(start=today, end=week_from_today, labels=labels)
     if events is None:  # Make sure there wasn't an error talking to ABE
         return prepare_abe_connectivity_problem_response()
 
+    # Build the response
     text_res = 'I found {} events coming up on the Olin calendar in the next week.'.format(len(events))
     for event in events:
         text_res += " {}, there's {} {}.".format(event.get_start_speech(), event.title, 'in ' + event.location if event.location else '')
@@ -55,13 +60,22 @@ def handle_whats_happening_next_request(intent, labels=None):
 
 
 def handle_whats_happening_on_request(intent):
+    """
+    This function queries ABE for events happening on a specific date. It handles the "WhatsHappeningOn" intent from AVS.
+    :param {AVSIntent} intent: the intent from AVS
+    :return {list}: the events found on the given date
+    """
+    # Convert intent date to Python date
     date = intent.slots['date'].value
     date = datetime.strptime(date, '%Y-%m-%d')
-    tomorrow_morning = date+timedelta(days=1)
+    tomorrow_morning = date+timedelta(days=1)  # The end time for our query
+
+    # Get the events
     events = get_events(start=date, end=tomorrow_morning)
-    if not events:  # Make sure there wasn't an error talking to ABE
+    if events is None:  # Make sure there wasn't an error talking to ABE
         return prepare_abe_connectivity_problem_response()
 
+    # Build the response
     date_as_words = date.strftime('%A, %B %d')
     count = len(events)
     text_res = 'I found {} event{} on {}.'.format('no' if count == 0 else count, '' if count == 1 else 's', date_as_words)
@@ -72,6 +86,10 @@ def handle_whats_happening_on_request(intent):
 
 
 def prepare_abe_connectivity_problem_response():
+    """
+    Generates a response to send to AVS indicating there was a problem talking to ABE.
+    :return {dict}: a response to be sent back to AVS
+    """
     return prepare_response('There was a problem speaking to ABE. Please contact your Library Overlord.')
 
 
@@ -85,7 +103,7 @@ def get_events(start=None, end=None, labels=None):
     """
     print('Getting events between {} and {}'.format(start, end))
     # Make an HTTP request to ABE
-    request_url = 'https://abe-dev.herokuapp.com/events/'
+    request_url = 'https://abe-dev.herokuapp.com/events/'  # TODO Load this from an environment variable
     if start and end:  # If we're searching within a specific range, add that to the GET parameters
         request_url += '?start={}&end={}'.format(format_date_url(start), format_date_url(end))
 
@@ -106,7 +124,7 @@ def get_events(start=None, end=None, labels=None):
     # Convert the result into the format we want
     events = []
     for event in result:
-        # Convert JSON libeary into an event object
+        # Convert JSON into an event object
         event = ABEEvent(event)
         # Filter, if necessary TODO ABE does this
         if labels:

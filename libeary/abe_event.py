@@ -4,6 +4,10 @@ from dateutil import tz
 
 
 class ABEEvent:
+    """
+    ABEEvent represents an event stored in ABE. It converts a JSON representation received from ABE into a Python
+    object that is more interrogable and adds helper functions.
+    """
 
     from_zone = tz.gettz('UTC')
     to_zone = tz.gettz('America/New_York')
