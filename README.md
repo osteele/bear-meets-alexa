@@ -16,21 +16,47 @@ We attempted to set up Alexa on a Raspberry Pi, which is what currently runs the
 unsuccessful in doing this (kept running into refresh token errors). Thus, it currently must be run on a normal Alexa-enabled
 device, such as an Echo.
 
+## Current state
+
+As it stands now, the skill will fetch events happening in the next week and read them out to you one at a time.
+The times may or may not be correct, due to some bugs with the time zones on the frontend used for adding events.
+The backend (ABE) is also not taking into account timezone offsets when handling queries, so an event starting
+past 7pm EST will be interpreted by the backend as starting on the next day (12am UTC).
+
+Though filtering by labels is implemented in the Lambda function, the AVS skill is not parsing speech for a list
+of labels, so that code is currently unused and untested.
+
 ## Usage
 
-To get the events happening in the next week, simply ask any of the following:
+#### Deployment
+
+In order to get this skill running on your own, you'll need to
+
+1) deploy the Python files in this repository to AWS Lambda
+2) create an Alexa Skill to handle the queries listed below (intent names should match). The
+
+Create an intent named `WhatsHappeningNext` with no data slots to handle the following utterances:
 
 ```
-Alexa, ask Bear what's happening next
-Alexa, ask Bear what's happening next at Olin
-Alexa, ask Bear what's happening next on the Olin calendar
+what's happening next
+what's happening next at Olin
+what's happening next on the Olin calendar
 ```
 
-To get events on a specific date, ask something like the following:
+To get events on a specific date, create an intent called `WhatsHappeningOn` with a data slot called
+`date`. The utterance could look something like the following:
 
 ```
-Alexa, ask Bear what's happening today
+what's happening on {date}
+```
+
+#### Invocation
+
+When using the skill, speak the invocation word (we used `Bear`) followed by the utterance. For example
+
+```
 Alexa, ask Bear what's happening tomorrow
-Alexa, ask Bear what's happening on Tuesday
-Alexa, ask Bear what's happening on March 12th
 ```
+
+AVS will convert colloquial dates (e.g. "tomorrow", "next Wednesday") into date strings
+before being sent to the Lambda function.
