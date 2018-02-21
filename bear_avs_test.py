@@ -1,27 +1,30 @@
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 import json
 from lambda_function import *
 from test_fixtures import ABE_events, happening_intent
 
-# Confident that the output should be right. Mock is getting called but
-# somehow being processed incorrectly by the function.
-
 
 def test_whats_happening():
-    with patch('lambda_function.get_events') as mock:
-        instance = mock.return_value
-        instance.method.return_value = ABE_events
-        result_next = handle_whats_happening_next_request(happening_intent)
+    with patch('lambda_function.get_events', return_value=ABE_events) as mock:
+        result_next = handle_whats_happening_next_request(happening_intent, event_getter=mock)
         mock.assert_called_once()
         assert result_next == {'response': {'outputSpeech': {
             'text': "I found 2 events coming up on the Olin calendar in the next week. On Tuesday at 05:00 AM, there's Olin Monday . On Monday at 04:00 AM, there's Spring Break .", 'type': 'PlainText'}}, 'version': '1.0'}
 
-        #result_on = handle_whats_happening_on_request(happening_on_intent)
-        # assert result_on == {'response': {'outputSpeech': {'text': 'I found 0 events coming up on the Olin calendar in the next week.', 'type': 'PlainText'}}, 'version': '1.0'}
-        # define a set return value for the mock_ABE
+
+def test_whats_happening():
+    mock = Mock(return_value=ABE_events)
+    result_next = handle_whats_happening_next_request(happening_intent, event_getter=mock)
+    mock.assert_called_once()
+    assert result_next == {'response': {'outputSpeech': {
+        'text': "I found 2 events coming up on the Olin calendar in the next week. On Tuesday at 05:00 AM, there's Olin Monday . On Monday at 04:00 AM, there's Spring Break .", 'type': 'PlainText'}}, 'version': '1.0'}
+
+    #result_on = handle_whats_happening_on_request(happening_on_intent)
+    # assert result_on == {'response': {'outputSpeech': {'text': 'I found 0 events coming up on the Olin calendar in the next week.', 'type': 'PlainText'}}, 'version': '1.0'}
+    # define a set return value for the mock_ABE
 # 		assert handle_whats_happening_on_request(intent) == 'the result'
 # 		assert handle_whats_happening_on_request(intent) == 'the result'
 
@@ -36,9 +39,9 @@ def test_get_events():
     with patch('lambda_function.request.urlopen') as mock_events:
         instance = mock_events.return_value
         instance.method.return_value = None
-        mock_events.assert_called_once()
         assert get_events(start=datetime.strptime('2018-02-20', '%Y-%m-%d'),
                           end=datetime.strptime('2018-04-20', '%Y-%m-%d')) == []
+        mock_events.assert_called_once()
 
 # def test_get_events():
 # 	with patch('lambda_function.request.Request')as mock_events:

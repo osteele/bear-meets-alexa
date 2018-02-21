@@ -40,7 +40,7 @@ def lambda_handler(req, context):
     return prepare_response("I didn't recognize the intent " + intent.name)
 
 
-def handle_whats_happening_next_request(intent, labels=None):
+def handle_whats_happening_next_request(intent, labels=None, event_getter=None):
     """
     This function queries ABE for events happening in the next week. It handles the "WhatsHappeningNext" request from AVS.
     :param {AVSIntent} intent: the intent from AVS
@@ -56,7 +56,8 @@ def handle_whats_happening_next_request(intent, labels=None):
     week_from_today = today + timedelta(weeks=1)
 
     # Get the events
-    events = get_events(start=today, end=week_from_today, labels=labels)
+    event_getter = event_getter or get_events
+    events = event_getter(start=today, end=week_from_today, labels=labels)
     # If there is an error, consider reporting this fact to the user so they
     # don't erroneously think nothing is scheduled. (This is less critical
     # with current uses of ABE. It could be more critical if you were
