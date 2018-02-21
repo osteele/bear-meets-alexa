@@ -22,3 +22,11 @@ var/
 
 # Serverless directories
 .serverless
+
+# Needed for any Python project. Otherwise git reports dirt *.pyc files after
+# running any code. (Maybe PyCharm surpresses the creation of *.pyc files, and
+# you weren't seeing this?)
+*.pyc
+
+# not sure who was creating this -- maybe pytest? --- but I needed this too.
+.cache

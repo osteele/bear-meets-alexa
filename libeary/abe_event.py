@@ -7,9 +7,14 @@ class ABEEvent:
     """
     ABEEvent represents an event stored in ABE. It converts a JSON representation received from ABE into a Python
     object that is more interrogable and adds helper functions.
+
+    TODO document the format of the JSON representation (or refer to external
+    documentation or a test case that contains examples).
     """
 
     from_zone = tz.gettz('UTC')
+    # Because the app is in this time zone, or the user is in this time zone?
+    # Consider using an environment variable.
     to_zone = tz.gettz('America/New_York')
 
     def __init__(self, dict_data):
@@ -21,6 +26,7 @@ class ABEEvent:
         self.labels = dict_data.get('labels')
 
     def get_start_speech(self):
+        # Isn't str(strftime(…)) redundant?
         return str(self.start.strftime('All day %A' if self.all_day else 'On %A at %I:%M %p'))
 
     def has_labels(self, labels, exact_match=False):
@@ -37,6 +43,13 @@ class ABEEvent:
             elif exact_match:  # If the label is not on the event, check if we need an exact match
                 return False  # Exact match failed
 
+        # Can also probably something like the following. Again, this is a
+        # matter of taste.
+        #   if exact_match:
+        #       return set(self.labels) == set(labels)
+        #   else:
+        #       return not set(self.labels).isdisjoin(set(labels))
+
         return True  # Exact match successful
 
     @staticmethod
@@ -45,4 +58,3 @@ class ABEEvent:
         # Convert from UTC to Eastern
         dt.replace(tzinfo=ABEEvent.from_zone)
         return dt.astimezone(ABEEvent.to_zone)
-

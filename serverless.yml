@@ -31,5 +31,6 @@ Resources:
 package:
   exclude:
     - .gitignore
+    - documentation
     - secrets.yml
     - README.md

@@ -15,6 +15,7 @@ function then makes a request to ABE before formulating a response for AVS. The 
 We attempted to set up Alexa on a Raspberry Pi, which is what currently runs the bear's other features. However, we were
 unsuccessful in doing this (kept running into refresh token errors). Thus, it currently must be run on a normal Alexa-enabled
 device, such as an Echo.
+<!--Add a Github Issue that describes the issue-->
 
 ## Current state
 
@@ -28,12 +29,13 @@ of labels, so that code is currently unused and untested.
 
 ## Usage
 
-#### Deployment
+### Deployment
 
 In order to get this skill running on your own, you'll need to
 
-1) deploy the Python files in this repository to AWS Lambda
+1) deploy the Python files in this repository to AWS Lambda (how?)
 2) create an Alexa Skill to handle the queries listed below (intent names should match). The
+  (how?)
 
 Create an intent named `WhatsHappeningNext` with no data slots to handle the following utterances:
 
@@ -50,7 +52,7 @@ To get events on a specific date, create an intent called `WhatsHappeningOn` wit
 what's happening on {date}
 ```
 
-#### Invocation
+### Invocation
 
 When using the skill, speak the invocation word (we used `Bear`) followed by the utterance. For example
 
@@ -60,3 +62,7 @@ Alexa, ask Bear what's happening tomorrow
 
 AVS will convert colloquial dates (e.g. "tomorrow", "next Wednesday") into date strings
 before being sent to the Lambda function.
+
+## Authors
+
+???
